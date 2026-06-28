@@ -460,3 +460,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# 初始化数据库（带错误保护）
+try:
+    init_db()
+except Exception as e:
+    print(f"Warning: init_db failed: {e}")
