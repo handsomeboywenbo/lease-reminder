@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}账期催缴系统{% endblock %}</title>
+<style>
+/* ── 全局 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 17px; line-height: 1.7;
+    color: #1a1a2e; background: #f5f6fa; min-height: 100vh;
+}
+a { color: #4361ee; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── 导航栏 ── */
+.navbar {
+    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    padding: 14px 24px; display: flex; align-items: center; gap: 20px;
+    flex-wrap: wrap;
+}
+.navbar .logo { color: #fff; font-size: 20px; font-weight: 700; text-decoration: none; }
+.navbar .logo:hover { text-decoration: none; }
+.navbar a:not(.logo) {
+    color: rgba(255,255,255,.85); font-size: 16px; padding: 6px 14px;
+    border-radius: 8px; transition: background .15s;
+}
+.navbar a:not(.logo):hover { background: rgba(255,255,255,.15); text-decoration: none; }
+
+/* ── 主内容 ── */
+.container { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
+
+/* ── Flash 消息 ── */
+.flash { padding: 14px 20px; border-radius: 10px; margin-bottom: 18px;
+         font-size: 16px; line-height: 1.6; }
+.flash.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.flash.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.flash.info    { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+/* ── 卡片 ── */
+.card {
+    background: #fff; border-radius: 12px; padding: 22px 26px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 20px;
+}
+.card h2 { font-size: 20px; margin-bottom: 16px; color: #3a0ca3; }
+
+/* ── 表格 ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 16px; }
+th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #eee; }
+th { font-weight: 600; color: #555; font-size: 14px; }
+tr:hover td { background: #f8f9ff; }
+
+/* ── 按钮 ── */
+.btn, button {
+    display: inline-block; padding: 10px 24px; border: none; border-radius: 8px;
+    font-size: 16px; cursor: pointer; text-decoration: none; transition: background .15s;
+}
+.btn-primary { background: #4361ee; color: #fff; }
+.btn-primary:hover { background: #3a56d4; text-decoration: none; }
+.btn-danger  { background: #e63946; color: #fff; }
+.btn-danger:hover { background: #c5303c; text-decoration: none; }
+.btn-success { background: #2d6a4f; color: #fff; }
+.btn-success:hover { background: #1b4332; text-decoration: none; }
+.btn-small { padding: 6px 14px; font-size: 14px; }
+
+/* ── 表单 ── */
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 14px; color: #555; font-weight: 500; }
+.form-group input, .form-group select {
+    padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 16px; background: #fff; min-width: 160px;
+}
+.form-group input:focus, .form-group select:focus {
+    outline: none; border-color: #4361ee; box-shadow: 0 0 0 3px rgba(67,97,238,.12);
+}
+
+/* ── 统计卡片 ── */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+    background: #fff; border-radius: 12px; padding: 20px; text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.stat-card .num { font-size: 32px; font-weight: 700; color: #3a0ca3; }
+.stat-card .label { font-size: 14px; color: #888; margin-top: 4px; }
+
+/* ── 空状态 ── */
+.empty { text-align: center; color: #aaa; padding: 40px 0; font-size: 16px; }
+
+/* ── 标记色 ── */
+.tag-urgent { color: #e63946; font-weight: 600; }
+.tag-warn   { color: #e76f51; font-weight: 600; }
+.tag-ok     { color: #2d6a4f; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{{ url_for('index') }}" class="logo">📋 账期催缴</a>
+    <a href="{{ url_for('shops') }}">🏪 门面管理</a>
+    <a href="{{ url_for('landlords') }}">🏠 房东合同</a>
+    <a href="{{ url_for('tenants') }}">👤 租户合同</a>
+    <a href="{{ url_for('settings') }}">⚙️ 设置</a>
+</nav>
+
+<div class="container">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+        {% for cat, msg in msgs %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}房东合同管理{% endblock %}
+{% block content %}
+
+<div class="card">
+    <h2>🏠 添加房东合同（我方给房东付钱）</h2>
+    <form method="POST" class="form-row">
+        <!-- 基础信息 -->
+        <div class="form-group">
+            <label for="shop_id">所属门面</label>
+            <select id="shop_id" name="shop_id" required>
+                <option value="">— 请选择 —</option>
+                {% for s in shops %}
+                <option value="{{ s.shop_id }}">{{ s.shop_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="landlord_name">房东姓名</label>
+            <input type="text" id="landlord_name" name="landlord_name" placeholder="例如：王建国" required>
+        </div>
+        <div class="form-group">
+            <label for="landlord_phone">房东电话</label>
+            <input type="text" id="landlord_phone" name="landlord_phone" placeholder="例如：13800000000">
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="signing_date">签订日期</label>
+            <input type="date" id="signing_date" name="signing_date">
+        </div>
+        <div class="form-group">
+            <label for="annual_amount">年付金额（元）</label>
+            <input type="number" id="annual_amount" name="annual_amount" placeholder="例如：100000" step="0.01">
+        </div>
+        <div class="form-group">
+            <label for="end_date">合同截止日期</label>
+            <input type="date" id="end_date" name="end_date">
+        </div>
+        <div class="form-group">
+            <label for="next_payment_date">下次付款日期</label>
+            <input type="date" id="next_payment_date" name="next_payment_date" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self:flex-end;">➕ 添加</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>📋 收楼合同列表（到期日从近到远）</h2>
+    {% if contracts %}
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>门面</th><th>房东</th><th>电话</th><th>年付(元)</th><th>签订日</th><th>截止日</th><th>下次付款</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+            {% for c in contracts %}
+            <tr>
+                <td>{{ c.shop_name }}</td>
+                <td>{{ c.landlord_name }}</td>
+                <td>{{ c.landlord_phone or '-' }}</td>
+                <td>{{ '{:,.0f}'.format(c.annual_amount) if c.annual_amount else '-' }}</td>
+                <td>{{ c.signing_date or '-' }}</td>
+                <td>{{ c.end_date or '-' }}</td>
+                <td>{{ c.next_payment_date }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('delete_landlord', cid=c.contract_id) }}"
+                          onsubmit="return confirm('确认删除房东「{{ c.landlord_name }}」的合同？');">
+                        <button type="submit" class="btn btn-danger btn-small">🗑 删除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty">暂无房东合同</div>
+    {% endif %}
+</div>
+
+{% endblock %}

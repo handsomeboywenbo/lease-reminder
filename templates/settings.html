@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}系统设置{% endblock %}
+{% block content %}
+
+<div class="card">
+    <h2>⚙️ 微信推送设置</h2>
+    <p style="margin-bottom:16px;color:#666;">
+        填写 Server酱 SendKey 后，系统每次检查到到期提醒就会自动推送到你的微信。
+    </p>
+    <form method="POST" class="form-row">
+        <div class="form-group" style="flex:1;min-width:280px;">
+            <label for="sckey">Server酱 SendKey</label>
+            <input type="text" id="sckey" name="sckey"
+                   value="{{ sckey if sckey != '请替换为你的Server酱KEY' else '' }}"
+                   placeholder="请填入你的 Server酱 SendKey"
+                   style="width:100%;">
+        </div>
+        <button type="submit" class="btn btn-primary">💾 保存</button>
+    </form>
+    <details style="margin-top:16px;font-size:14px;color:#888;">
+        <summary style="cursor:pointer;">❓ 如何获取 Server酱 Key？</summary>
+        <ol style="margin-top:8px;padding-left:20px;line-height:2;">
+            <li>打开 <a href="https://sct.ftqq.com" target="_blank">https://sct.ftqq.com</a></li>
+            <li>使用微信扫码登录</li>
+            <li>复制你的 SendKey，粘贴到上方输入框</li>
+            <li>点击「保存」，大功告成！</li>
+        </ol>
+    </details>
+</div>
+
+<div class="card">
+    <h2>📌 使用说明</h2>
+    <ul style="padding-left:20px;line-height:2.2;color:#555;">
+        <li><strong>录入信息</strong>：先添加「门面」，再添加对应的「房东合同」和「租户合同」</li>
+        <li><strong>自动提醒</strong>：系统每天会自动检查，<strong>租户交租提前 3 天</strong>、<strong>房东付款提前 5 天</strong> 推送微信</li>
+        <li><strong>手动检查</strong>：在首页点击「立即检查并推送微信」</li>
+        <li><strong>定时运行</strong>：配合 crontab，每天自动推送，阿姨不用操心</li>
+    </ul>
+</div>
+
+{% endblock %}

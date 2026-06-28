@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}首页 — 账期催缴系统{% endblock %}
+{% block content %}
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="num">{{ shop_count }}</div>
+        <div class="label">门面总数</div>
+    </div>
+    <div class="stat-card">
+        <div class="num">{{ tenant_count }}</div>
+        <div class="label">租户合同</div>
+    </div>
+    <div class="stat-card">
+        <div class="num">{{ landlord_count }}</div>
+        <div class="label">房东合同</div>
+    </div>
+</div>
+
+{% if not key_ok %}
+<div class="flash info">
+    ⚠️ 尚未配置微信推送。请前往
+    <a href="{{ url_for('settings') }}">⚙️ 系统设置</a>
+    填写 Server酱 Key，然后每天就能自动收到微信提醒了。
+</div>
+{% endif %}
+
+<div class="card" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <div>
+        <h2 style="margin-bottom:0;">📅 今日日期: {{ today.isoformat() }}</h2>
+    </div>
+    <form method="POST" action="{{ url_for('check_now') }}">
+        <button type="submit" class="btn btn-success">🔄 立即检查并推送微信</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>💰 即将交租的租户（未来 30 天）</h2>
+    {% if upcoming_tenants %}
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>门面</th><th>地址</th><th>租户</th><th>手机</th><th>年付(元)</th><th>交租日期</th><th>剩余</th></tr>
+        </thead>
+        <tbody>
+            {% for r in upcoming_tenants %}
+            {% set days = (r.next_payment_date | string | to_date - today).days %}
+            <tr>
+                <td>{{ r.shop_name }}</td>
+                <td>{{ r.address or '-' }}</td>
+                <td>{{ r.tenant_name }}</td>
+                <td>{{ r.tenant_phone }}</td>
+                <td>{{ '{:,.0f}'.format(r.annual_amount) if r.annual_amount else '-' }}</td>
+                <td>{{ r.next_payment_date }}</td>
+                <td class="{% if days <= 3 %}tag-urgent{% elif days <= 7 %}tag-warn{% else %}tag-ok{% endif %}">
+                    {{ days }} 天
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty">暂无即将到期的租户合同</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>🏦 即将付款给房东（未来 30 天）</h2>
+    {% if upcoming_landlords %}
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>门面</th><th>地址</th><th>房东</th><th>电话</th><th>年付(元)</th><th>付款日期</th><th>剩余</th></tr>
+        </thead>
+        <tbody>
+            {% for r in upcoming_landlords %}
+            {% set days = (r.next_payment_date | string | to_date - today).days %}
+            <tr>
+                <td>{{ r.shop_name }}</td>
+                <td>{{ r.address or '-' }}</td>
+                <td>{{ r.landlord_name }}</td>
+                <td>{{ r.landlord_phone or '-' }}</td>
+                <td>{{ '{:,.0f}'.format(r.annual_amount) if r.annual_amount else '-' }}</td>
+                <td>{{ r.next_payment_date }}</td>
+                <td class="{% if days <= 5 %}tag-urgent{% elif days <= 10 %}tag-warn{% else %}tag-ok{% endif %}">
+                    {{ days }} 天
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty">暂无即将到期的房东合同</div>
+    {% endif %}
+</div>
+
+{% endblock %}
