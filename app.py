@@ -37,6 +37,8 @@ SERVERCHAN_URL = "https://sctapi.ftqq.com/{key}.send"
 app = Flask(__name__)
 app.secret_key = os.urandom(16).hex()
 
+init_db()
+
 # ─── Jinja2 自定义过滤器 ───────────────────
 @app.template_filter("to_date")
 def to_date_filter(date_str):
