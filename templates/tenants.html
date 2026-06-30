@@ -51,7 +51,7 @@
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>门面</th><th>租户</th><th>手机</th><th>年付(元)</th><th>签订日</th><th>截止日</th><th>下次交租</th><th>操作</th></tr>
+            <tr><th>门面</th><th>租户</th><th>付款方式</th><th>付款金额</th><th>签订日</th><th>截止日</th><th>下次交租</th><th>操作</th></tr>
         </thead>
         <tbody>
             {% for c in contracts %}
@@ -59,9 +59,7 @@
                 <td>{{ c.shop_name }}</td>
                 <td>{{ c.tenant_name }}</td>
                 <td>{{ c.payment_method or '年付' }}</td>
-                <td>{{ '{:,.0f}'.format(c.installment_amount) if c.installment_amount else '-' }}</td>
-                <td>{{ c.tenant_phone }}</td>
-                <td>{{ '{:,.0f}'.format(c.annual_amount) if c.annual_amount else '-' }}</td>
+                <td>{{ '{:,.0f}'.format(c.installment_amount) if c.installment_amount else '-' }}{% if c.payment_method == '年付' %}元/年{% elif c.payment_method == '季付' %}元/季{% elif c.payment_method == '半年付' %}元/半年{% endif %}</td>
                 <td class="nowrap">{{ c.signing_date or '-' }}</td>
                 <td class="nowrap">{{ c.end_date or '-' }}</td>
                 <td class="nowrap">{{ c.next_payment_date }}</td>
