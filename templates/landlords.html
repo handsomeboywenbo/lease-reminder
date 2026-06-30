@@ -20,8 +20,16 @@
             <input type="text" id="landlord_name" name="landlord_name" placeholder="例如：王建国" required>
         </div>
         <div class="form-group">
-            <label for="landlord_phone">房东电话</label>
-            <input type="text" id="landlord_phone" name="landlord_phone" placeholder="例如：13800000000">
+            <label for="payment_method">付款方式</label>
+            <select id="payment_method" name="payment_method">
+                <option value="年付">年付</option>
+                <option value="季付">季付</option>
+                <option value="半年付">半年付</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="installment_amount">每期金额（元）</label>
+            <input type="number" id="installment_amount" name="installment_amount" placeholder="每次付多少钱" step="0.01">
         </div>
     </div>
     <div class="form-row">
@@ -51,14 +59,15 @@
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>门面</th><th>房东</th><th>电话</th><th>年付(元)</th><th>签订日</th><th>截止日</th><th>下次付款</th><th>操作</th></tr>
+            <tr><th>门面</th><th>房东</th><th>付款方式</th><th>每期金额</th><th>年总额</th><th>签订日</th><th>截止日</th><th>下次付款</th><th>操作</th></tr>
         </thead>
         <tbody>
             {% for c in contracts %}
             <tr>
                 <td>{{ c.shop_name }}</td>
                 <td>{{ c.landlord_name }}</td>
-                <td>{{ c.landlord_phone or '-' }}</td>
+                <td>{{ c.payment_method or '年付' }}</td>
+                <td>{{ '{:,.0f}'.format(c.installment_amount) if c.installment_amount else '-' }}</td>
                 <td>{{ '{:,.0f}'.format(c.annual_amount) if c.annual_amount else '-' }}</td>
                 <td>{{ c.signing_date or '-' }}</td>
                 <td>{{ c.end_date or '-' }}</td>
