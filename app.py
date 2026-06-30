@@ -2,34 +2,25 @@
 # -*- coding: utf-8 -*-
 """
 二房东门面租赁账期催缴系统 — 网页版
-
-用法:
-  启动:   python3 app.py
-  然后浏览器打开 http://127.0.0.1:5000
 """
 
 import sqlite3
 import os
-import sys
 import threading
 import webbrowser
-import socket
 from datetime import datetime, date, timedelta
 
 import requests
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 # ─── 配置 ────────────────────────────────────
-# 数据库路径（与 lease_reminder.py 共用）
 DB_DIR = os.path.dirname(os.path.abspath(__file__))
+os.makedirs(DB_DIR, exist_ok=True)
 DB_PATH = os.path.join(DB_DIR, "lease_data.db")
 DATE_FMT = "%Y-%m-%d"
 
-# ─────────────────────────────────────────────
-# ⚠️  请在这里填写你的 Server酱 SendKey
+# ⚠️ 请在这里填写你的 Server酱 SendKey
 # 获取地址: https://sct.ftqq.com
-# 也可以打开网页后在"系统设置"里填写
-# ─────────────────────────────────────────────
 SCKEY = "请替换为你的Server酱KEY"
 SERVERCHAN_URL = "https://sctapi.ftqq.com/{key}.send"
 
@@ -37,7 +28,6 @@ SERVERCHAN_URL = "https://sctapi.ftqq.com/{key}.send"
 app = Flask(__name__)
 app.secret_key = os.urandom(16).hex()
 
-init_db()
 
 # ─── Jinja2 自定义过滤器 ───────────────────
 @app.template_filter("to_date")
@@ -50,14 +40,7 @@ def to_date_filter(date_str):
 # ============================================================
 
 def get_conn():
-    database_url = os.environ.get("DATABASE_URL")
-    if database_url:
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-        conn = psycopg2.connect(database_url)
-        return conn
-    os.makedirs(DB_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -67,17 +50,16 @@ def get_conn():
 def init_db():
     conn = get_conn()
     cur = conn.cursor()
-    auto_pk = "SERIAL" if is_cloud() else "INTEGER PRIMARY KEY AUTOINCREMENT"
-    cur.execute(f"""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS Shops (
-            shop_id    {auto_pk},
+            shop_id    INTEGER PRIMARY KEY AUTOINCREMENT,
             shop_name  TEXT NOT NULL,
             address    TEXT DEFAULT ''
         );
     """)
-    cur.execute(f"""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS LandlordContracts (
-            contract_id        {auto_pk},
+            contract_id        INTEGER PRIMARY KEY AUTOINCREMENT,
             shop_id            INTEGER NOT NULL,
             landlord_name      TEXT NOT NULL,
             landlord_phone     TEXT DEFAULT '',
@@ -87,9 +69,9 @@ def init_db():
             next_payment_date  TEXT NOT NULL
         );
     """)
-    cur.execute(f"""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS TenantContracts (
-            contract_id        {auto_pk},
+            contract_id        INTEGER PRIMARY KEY AUTOINCREMENT,
             shop_id            INTEGER NOT NULL,
             tenant_name        TEXT NOT NULL,
             tenant_phone       TEXT NOT NULL,
@@ -101,6 +83,17 @@ def init_db():
     """)
     conn.commit()
     conn.close()
+
+
+# ============================================================
+#  SQL 日期辅助
+# ============================================================
+
+def sql_now():
+    return date.today().isoformat()
+
+def sql_now_plus(days):
+    return (date.today() + timedelta(days=days)).isoformat()
 
 
 # ============================================================
@@ -120,21 +113,19 @@ def send_wechat(title: str, content: str) -> bool:
 
 
 # ============================================================
-#  每日检查（与 lease_reminder.py 逻辑一致）
+#  每日检查逻辑（提前7天和3天提醒）
 # ============================================================
 
 def run_daily_check() -> list:
-    """执行检查，返回消息列表"""
     today = date.today()
     messages = []
     conn = get_conn()
 
-    # ── 在每个提前天数检查 ──
     for days_before in [7, 3]:
         target = today + timedelta(days=days_before)
         ds = str(days_before)
 
-        # 租户催款
+        # ── 租户催款 ──
         rows = conn.execute("""
             SELECT s.shop_name, t.tenant_name, t.tenant_phone, t.next_payment_date
             FROM TenantContracts t
@@ -155,7 +146,7 @@ def run_daily_check() -> list:
             if sent:
                 messages[-1]["pushed"] = True
 
-        # 房东付款
+        # ── 房东付款 ──
         rows = conn.execute("""
             SELECT s.shop_name, l.landlord_name, l.landlord_phone, l.next_payment_date
             FROM LandlordContracts l
@@ -189,29 +180,27 @@ def run_daily_check() -> list:
 @app.route("/")
 def index():
     conn = get_conn()
-
     today = date.today()
     tn = sql_now()
     tn30 = sql_now_plus(30)
-    # 未来 30 天即将到期的租户
-    upcoming_tenants = conn.execute(f"""
+
+    upcoming_tenants = conn.execute("""
         SELECT s.shop_name, s.address, t.tenant_name, t.tenant_phone, t.annual_amount, t.next_payment_date
         FROM TenantContracts t
         JOIN Shops s ON s.shop_id = t.shop_id
-        WHERE t.next_payment_date >= {tn}
-          AND t.next_payment_date <= {tn30}
+        WHERE t.next_payment_date >= ?
+          AND t.next_payment_date <= ?
         ORDER BY t.next_payment_date
-    """).fetchall()
+    """, (tn, tn30)).fetchall()
 
-    # 未来 30 天即将到期的房东
-    upcoming_landlords = conn.execute(f"""
+    upcoming_landlords = conn.execute("""
         SELECT s.shop_name, s.address, l.landlord_name, l.landlord_phone, l.annual_amount, l.next_payment_date
         FROM LandlordContracts l
         JOIN Shops s ON s.shop_id = l.shop_id
-        WHERE l.next_payment_date >= {tn}
-          AND l.next_payment_date <= {tn30}
+        WHERE l.next_payment_date >= ?
+          AND l.next_payment_date <= ?
         ORDER BY l.next_payment_date
-    """).fetchall()
+    """, (tn, tn30)).fetchall()
 
     shop_count = conn.execute("SELECT COUNT(*) AS c FROM Shops").fetchone()["c"]
     tenant_count = conn.execute("SELECT COUNT(*) AS c FROM TenantContracts").fetchone()["c"]
@@ -261,7 +250,6 @@ def shops():
 @app.route("/shops/<int:shop_id>/delete", methods=["POST"])
 def delete_shop(shop_id):
     conn = get_conn()
-    # 先删关联的合同
     conn.execute("DELETE FROM LandlordContracts WHERE shop_id = ?", (shop_id,))
     conn.execute("DELETE FROM TenantContracts WHERE shop_id = ?", (shop_id,))
     conn.execute("DELETE FROM Shops WHERE shop_id = ?", (shop_id,))
@@ -324,6 +312,39 @@ def delete_landlord(cid):
     return redirect(url_for("landlords"))
 
 
+@app.route("/landlords/<int:cid>/edit", methods=["POST"])
+def edit_landlord(cid):
+    conn = get_conn()
+    contract = conn.execute("SELECT * FROM LandlordContracts WHERE contract_id = ?", (cid,)).fetchone()
+    if not contract:
+        conn.close()
+        flash("合同不存在", "error")
+        return redirect(url_for("landlords"))
+    shop_id = request.form.get("shop_id", "").strip()
+    name = request.form.get("landlord_name", "").strip()
+    phone = request.form.get("landlord_phone", "").strip()
+    signing = request.form.get("signing_date", "").strip()
+    amount = request.form.get("annual_amount", "").strip()
+    end = request.form.get("end_date", "").strip()
+    date_str = request.form.get("next_payment_date", "").strip()
+    if shop_id and name and date_str:
+        try:
+            datetime.strptime(date_str, DATE_FMT)
+            amt = float(amount) if amount else 0
+            conn.execute(
+                "UPDATE LandlordContracts SET shop_id=?, landlord_name=?, landlord_phone=?, signing_date=?, annual_amount=?, end_date=?, next_payment_date=? WHERE contract_id=?",
+                (shop_id, name, phone, signing, amt, end, date_str, cid),
+            )
+            conn.commit()
+            flash(f"房东合同已更新", "success")
+        except ValueError:
+            flash("日期格式错误", "error")
+    else:
+        flash("请填写完整信息", "error")
+    conn.close()
+    return redirect(url_for("landlords"))
+
+
 # ============================================================
 #  出楼合同（租户）管理
 # ============================================================
@@ -377,6 +398,39 @@ def delete_tenant(cid):
     return redirect(url_for("tenants"))
 
 
+@app.route("/tenants/<int:cid>/edit", methods=["POST"])
+def edit_tenant(cid):
+    conn = get_conn()
+    contract = conn.execute("SELECT * FROM TenantContracts WHERE contract_id = ?", (cid,)).fetchone()
+    if not contract:
+        conn.close()
+        flash("合同不存在", "error")
+        return redirect(url_for("tenants"))
+    shop_id = request.form.get("shop_id", "").strip()
+    name = request.form.get("tenant_name", "").strip()
+    phone = request.form.get("tenant_phone", "").strip()
+    signing = request.form.get("signing_date", "").strip()
+    amount = request.form.get("annual_amount", "").strip()
+    end = request.form.get("end_date", "").strip()
+    date_str = request.form.get("next_payment_date", "").strip()
+    if shop_id and name and phone and date_str:
+        try:
+            datetime.strptime(date_str, DATE_FMT)
+            amt = float(amount) if amount else 0
+            conn.execute(
+                "UPDATE TenantContracts SET shop_id=?, tenant_name=?, tenant_phone=?, signing_date=?, annual_amount=?, end_date=?, next_payment_date=? WHERE contract_id=?",
+                (shop_id, name, phone, signing, amt, end, date_str, cid),
+            )
+            conn.commit()
+            flash(f"租户合同已更新", "success")
+        except ValueError:
+            flash("日期格式错误", "error")
+    else:
+        flash("请填写完整信息", "error")
+    conn.close()
+    return redirect(url_for("tenants"))
+
+
 # ============================================================
 #  手动执行检查
 # ============================================================
@@ -403,7 +457,6 @@ def settings():
         new_key = request.form.get("sckey", "").strip()
         if new_key:
             app.config["SCKEY"] = new_key
-            # 持久化到文件，重启后仍有效
             key_file = os.path.join(DB_DIR, ".sckey")
             with open(key_file, "w") as f:
                 f.write(new_key)
@@ -417,11 +470,45 @@ def settings():
 
 
 # ============================================================
+#  插入测试数据
+# ============================================================
+
+def seed_demo_data():
+    conn = get_conn()
+    try:
+        existing = conn.execute("SELECT COUNT(*) AS c FROM Shops").fetchone()["c"]
+        if existing > 0:
+            return
+
+        # 门面
+        conn.execute(
+            "INSERT INTO Shops (shop_name, address) VALUES (?, ?)",
+            ("绿岛苑301公寓", "绿岛苑301公寓")
+        )
+
+        # 房东：王建国，年付10万，每年5月1日付款
+        conn.execute(
+            "INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (1, "王建国", "123456789", "2022-05-01", 100000, "2032-05-01", "2027-05-01")
+        )
+
+        # 租户：邓宇明，年付15万，每年10月13日付款
+        conn.execute(
+            "INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (1, "邓宇明", "111222333444", "2022-10-13", 150000, "2032-05-01", "2026-10-13")
+        )
+
+        conn.commit()
+        print("测试数据已插入")
+    finally:
+        conn.close()
+
+
+# ============================================================
 #  启动
 # ============================================================
 
 def load_sckey():
-    """启动时从文件恢复 Server酱 Key"""
     key_file = os.path.join(DB_DIR, ".sckey")
     if os.path.exists(key_file):
         with open(key_file) as f:
@@ -434,35 +521,19 @@ def load_sckey():
 
 def main():
     init_db()
+    seed_demo_data()
+    load_sckey()
 
-    # 加载已保存的 Key
-    if not load_sckey():
-        app.config["SCKEY"] = SCKEY
-
-    # 云端模式：使用 $PORT（Cloud Run 惯例）
-    port = int(os.environ.get("PORT", 5001))
-    host = "0.0.0.0" if is_cloud() else "127.0.0.1"
+    port = int(os.environ.get("PORT", 5000))
 
     print(f"""
 ╔══════════════════════════════════════╗
 ║   二房东门面租赁账期催缴系统          ║
-║                                      ║
-║   请在浏览器打开:                    ║
-║   →  http://{host}:{port}          ║
-║                                      ║
-║   关闭本窗口 = 关闭系统              ║
+║   浏览器打开: http://0.0.0.0:{port}    ║
 ╚══════════════════════════════════════╝
 """)
-    if not is_cloud():
-        webbrowser.open(f"http://127.0.0.1:{port}")
-    app.run(host=host, port=port, debug=False, threaded=True)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
 
 
 if __name__ == "__main__":
     main()
-
-# 初始化数据库（带错误保护）
-try:
-    init_db()
-except Exception as e:
-    print(f"Warning: init_db failed: {e}")
