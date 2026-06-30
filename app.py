@@ -87,7 +87,7 @@ def init_db():
     """)
     conn.commit()
     # 迁移：如果缺少新字段则添加
-    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+    for col, dtype in [('payment_method', "TEXT DEFAULT '年付'"), ('installment_amount', 'REAL DEFAULT 0')]:
         for table in ['LandlordContracts', 'TenantContracts']:
             try:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
@@ -266,7 +266,7 @@ def delete_shop(shop_id):
     conn.execute("DELETE FROM Shops WHERE shop_id = ?", (shop_id,))
     conn.commit()
     # 迁移：如果缺少新字段则添加
-    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+    for col, dtype in [('payment_method', "TEXT DEFAULT '年付'"), ('installment_amount', 'REAL DEFAULT 0')]:
         for table in ['LandlordContracts', 'TenantContracts']:
             try:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
@@ -328,7 +328,7 @@ def delete_landlord(cid):
     conn.execute("DELETE FROM LandlordContracts WHERE contract_id = ?", (cid,))
     conn.commit()
     # 迁移：如果缺少新字段则添加
-    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+    for col, dtype in [('payment_method', "TEXT DEFAULT '年付'"), ('installment_amount', 'REAL DEFAULT 0')]:
         for table in ['LandlordContracts', 'TenantContracts']:
             try:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
@@ -425,7 +425,7 @@ def delete_tenant(cid):
     conn.execute("DELETE FROM TenantContracts WHERE contract_id = ?", (cid,))
     conn.commit()
     # 迁移：如果缺少新字段则添加
-    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+    for col, dtype in [('payment_method', "TEXT DEFAULT '年付'"), ('installment_amount', 'REAL DEFAULT 0')]:
         for table in ['LandlordContracts', 'TenantContracts']:
             try:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
