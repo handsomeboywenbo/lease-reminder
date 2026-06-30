@@ -476,7 +476,6 @@ def settings():
 def seed_demo_data():
     conn = get_conn()
     try:
-        # 先清空旧数据
         conn.execute('DELETE FROM TenantContracts')
         conn.execute('DELETE FROM LandlordContracts')
         conn.execute('DELETE FROM Shops')
@@ -484,35 +483,50 @@ def seed_demo_data():
 
         # ======= 门面1：西街实验室 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('西街实验室', '西街实验室'))
-
-        # 房东：中电建建筑集团有限公司，年租金159135，季度付，起租2026-04-13，到2027-04-12，下次付款2026-07-13
         conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
             (1, '中电建建筑集团有限公司', '', '2026-04-13', 159135, '2027-04-12', '2026-07-13'))
-
-        # 租户：李四辈、朱洪帮，年付22万已付清，下次2027-04-13
         conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
             (1, '李四辈、朱洪帮', '', '2026-04-13', 220000, '2027-04-12', '2027-04-13'))
 
         # ======= 门面2：天泰定福苑家政 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('天泰定福苑家政', '天泰定福苑家政'))
-
-        # 房东：物业公司，年5000，每年4月1日付，下次2027-04-01
         conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
             (2, '物业公司', '', '2024-04-01', 5000, '2027-03-31', '2027-04-01'))
 
         # ======= 门面3：西街社区医院6号楼7号楼 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('西街社区医院6号楼7号楼', '西街社区医院6号楼7号楼'))
-
-        # 房东：中电建建筑集团有限公司，年12万，季度付3万，起租2026-04-21到2027-04-20，下次付款2026-07-21
         conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
             (3, '中电建建筑集团有限公司', '', '2026-04-21', 120000, '2027-04-20', '2026-07-21'))
-
-        # 租户：李雷，年付162500已付清，下次2027-03-21
         conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
             (3, '李雷', '', '2026-03-21', 162500, '2027-04-20', '2027-03-21'))
 
+        # ======= 门面4：大峪沟民宿 =======
+        conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('大峪沟民宿', '大峪沟民宿'))
+        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (4, '房东待填', '', '2025-09-15', 80000, '2030-09-14', '2026-09-15'))
+        # 无租户
+
+        # ======= 门面5：绿岛苑公寓 =======
+        conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('绿岛苑公寓', '绿岛苑公寓'))
+        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (5, '房东待填', '', '2023-07-01', 600000, '2030-05-16', '2026-07-01'))
+        # 租户：北京美联众合，下一期2026-09-01起按新价123.6万/年
+        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (5, '北京美联众合', '', '2023-09-01', 1236000, '2028-08-31', '2026-09-01'))
+
+        # ======= 门面6：天泰定福苑7号楼7单元102 =======
+        conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('天泰定福苑7号楼7单元102', '天泰定福苑7号楼7单元102'))
+        # 房东：年付52478.97，第三年(2027-2028)递增5% = 55102.92
+        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (6, '物业公司', '', '2025-07-11', 52478.97, '2028-07-10', '2026-07-11'))
+        # 租户：刘春霞，半年付，第一年月5000，第二三年月5200
+        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (6, '刘春霞', '', '2024-12-01', 62400, '2027-11-30', '2026-12-01'))
+
         conn.commit()
-        print('真实数据已插入')
+        print('真实数据已插入（6个门面）')
+    finally:
+        conn.close()
     finally:
         conn.close()
 
