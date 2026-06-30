@@ -476,30 +476,43 @@ def settings():
 def seed_demo_data():
     conn = get_conn()
     try:
-        existing = conn.execute("SELECT COUNT(*) AS c FROM Shops").fetchone()["c"]
-        if existing > 0:
-            return
+        # 先清空旧数据
+        conn.execute('DELETE FROM TenantContracts')
+        conn.execute('DELETE FROM LandlordContracts')
+        conn.execute('DELETE FROM Shops')
+        conn.execute("DELETE FROM sqlite_sequence")
 
-        # 门面
-        conn.execute(
-            "INSERT INTO Shops (shop_name, address) VALUES (?, ?)",
-            ("绿岛苑301公寓", "绿岛苑301公寓")
-        )
+        # ======= 门面1：西街实验室 =======
+        conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('西街实验室', '西街实验室'))
 
-        # 房东：王建国，年付10万，每年5月1日付款
-        conn.execute(
-            "INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (1, "王建国", "123456789", "2022-05-01", 100000, "2032-05-01", "2027-05-01")
-        )
+        # 房东：中电建建筑集团有限公司，年租金159135，季度付，起租2026-04-13，到2027-04-12，下次付款2026-07-13
+        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (1, '中电建建筑集团有限公司', '', '2026-04-13', 159135, '2027-04-12', '2026-07-13'))
 
-        # 租户：邓宇明，年付15万，每年10月13日付款
-        conn.execute(
-            "INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (1, "邓宇明", "111222333444", "2022-10-13", 150000, "2032-05-01", "2026-10-13")
-        )
+        # 租户：李四辈、朱洪帮，年付22万已付清，下次2027-04-13
+        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (1, '李四辈、朱洪帮', '', '2026-04-13', 220000, '2027-04-12', '2027-04-13'))
+
+        # ======= 门面2：天泰定福苑家政 =======
+        conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('天泰定福苑家政', '天泰定福苑家政'))
+
+        # 房东：物业公司，年5000，每年4月1日付，下次2027-04-01
+        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (2, '物业公司', '', '2024-04-01', 5000, '2027-03-31', '2027-04-01'))
+
+        # ======= 门面3：西街社区医院6号楼7号楼 =======
+        conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('西街社区医院6号楼7号楼', '西街社区医院6号楼7号楼'))
+
+        # 房东：中电建建筑集团有限公司，年12万，季度付3万，起租2026-04-21到2027-04-20，下次付款2026-07-21
+        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (3, '中电建建筑集团有限公司', '', '2026-04-21', 120000, '2027-04-20', '2026-07-21'))
+
+        # 租户：李雷，年付162500已付清，下次2027-03-21
+        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (3, '李雷', '', '2026-03-21', 162500, '2027-04-20', '2027-03-21'))
 
         conn.commit()
-        print("测试数据已插入")
+        print('真实数据已插入')
     finally:
         conn.close()
 
