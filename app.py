@@ -593,10 +593,17 @@ def seed_demo_data():
         conn.execute("INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (10, '郭（库房）', '', '2026-05-22', 150000, '季付', 37500, '2027-05-21', '2026-08-22'))
 
+        # ======= 门面11：天泰7号楼4单元102 =======
+        conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('天泰7号楼4单元102', '天泰7号楼4单元102'))
+        conn.execute("INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (11, '物业公司', '', '2025-05-21', 51335.02, '年付', 51335.02, '2028-05-20', '2027-05-21'))
+        conn.execute("INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (11, '王生', '', '2025-03-01', 62400, '半年付', 31200, '2027-02-28', '2026-09-01'))
+
 
 
         conn.commit()
-        print('真实数据已插入（10个门面，含付款方式）')
+        print('真实数据已插入（11个门面，含付款方式）')
     finally:
         conn.close()
 
