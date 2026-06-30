@@ -40,7 +40,7 @@
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>门面</th><th>地址</th><th>租户</th><th>手机</th><th>年付(元)</th><th>交租日期</th><th>剩余</th></tr>
+            <tr><th>门面</th><th>地址</th><th>租户</th><th>付款方式</th><th>每期金额</th><th>年总额</th><th>交租日期</th><th>剩余</th></tr>
         </thead>
         <tbody>
             {% for r in upcoming_tenants %}
@@ -49,7 +49,8 @@
                 <td>{{ r.shop_name }}</td>
                 <td>{{ r.address or '-' }}</td>
                 <td>{{ r.tenant_name }}</td>
-                <td>{{ r.tenant_phone }}</td>
+                <td>{{ r.payment_method or '年付' }}</td>
+                <td>{{ '{:,.0f}'.format(r.installment_amount) if r.installment_amount else '-' }}</td>
                 <td>{{ '{:,.0f}'.format(r.annual_amount) if r.annual_amount else '-' }}</td>
                 <td>{{ r.next_payment_date }}</td>
                 <td class="{% if days <= 3 %}tag-urgent{% elif days <= 7 %}tag-warn{% else %}tag-ok{% endif %}">
@@ -71,7 +72,7 @@
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>门面</th><th>地址</th><th>房东</th><th>电话</th><th>年付(元)</th><th>付款日期</th><th>剩余</th></tr>
+            <tr><th>门面</th><th>地址</th><th>房东</th><th>付款方式</th><th>每期金额</th><th>年总额</th><th>付款日期</th><th>剩余</th></tr>
         </thead>
         <tbody>
             {% for r in upcoming_landlords %}
@@ -80,7 +81,8 @@
                 <td>{{ r.shop_name }}</td>
                 <td>{{ r.address or '-' }}</td>
                 <td>{{ r.landlord_name }}</td>
-                <td>{{ r.landlord_phone or '-' }}</td>
+                <td>{{ r.payment_method or '年付' }}</td>
+                <td>{{ '{:,.0f}'.format(r.installment_amount) if r.installment_amount else '-' }}</td>
                 <td>{{ '{:,.0f}'.format(r.annual_amount) if r.annual_amount else '-' }}</td>
                 <td>{{ r.next_payment_date }}</td>
                 <td class="{% if days <= 5 %}tag-urgent{% elif days <= 10 %}tag-warn{% else %}tag-ok{% endif %}">
