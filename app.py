@@ -86,6 +86,13 @@ def init_db():
         );
     """)
     conn.commit()
+    # 迁移：如果缺少新字段则添加
+    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+        for table in ['LandlordContracts', 'TenantContracts']:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
+            except:
+                pass
     conn.close()
 
 
@@ -258,6 +265,13 @@ def delete_shop(shop_id):
     conn.execute("DELETE FROM TenantContracts WHERE shop_id = ?", (shop_id,))
     conn.execute("DELETE FROM Shops WHERE shop_id = ?", (shop_id,))
     conn.commit()
+    # 迁移：如果缺少新字段则添加
+    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+        for table in ['LandlordContracts', 'TenantContracts']:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
+            except:
+                pass
     conn.close()
     flash("门面及关联合同已删除", "success")
     return redirect(url_for("shops"))
@@ -313,6 +327,13 @@ def delete_landlord(cid):
     conn = get_conn()
     conn.execute("DELETE FROM LandlordContracts WHERE contract_id = ?", (cid,))
     conn.commit()
+    # 迁移：如果缺少新字段则添加
+    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+        for table in ['LandlordContracts', 'TenantContracts']:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
+            except:
+                pass
     conn.close()
     flash("房东合同已删除", "success")
     return redirect(url_for("landlords"))
@@ -403,6 +424,13 @@ def delete_tenant(cid):
     conn = get_conn()
     conn.execute("DELETE FROM TenantContracts WHERE contract_id = ?", (cid,))
     conn.commit()
+    # 迁移：如果缺少新字段则添加
+    for col, dtype in [('payment_method', 'TEXT DEFAULT \"年付\"'), ('installment_amount', 'REAL DEFAULT 0')]:
+        for table in ['LandlordContracts', 'TenantContracts']:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {dtype}")
+            except:
+                pass
     conn.close()
     flash("租户合同已删除", "success")
     return redirect(url_for("tenants"))
