@@ -527,6 +527,8 @@ def seed_demo_data():
         print('真实数据已插入（6个门面）')
     finally:
         conn.close()
+    finally:
+        conn.close()
 
 
 # ============================================================
