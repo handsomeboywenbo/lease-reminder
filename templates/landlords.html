@@ -69,8 +69,8 @@
                 <td>{{ c.payment_method or '年付' }}</td>
                 <td>{{ '{:,.0f}'.format(c.installment_amount) if c.installment_amount else '-' }}</td>
                 <td>{{ '{:,.0f}'.format(c.annual_amount) if c.annual_amount else '-' }}</td>
-                <td>{{ c.signing_date or '-' }}</td>
-                <td>{{ c.end_date or '-' }}</td>
+                <td class="nowrap">{{ c.signing_date or '-' }}</td>
+                <td class="nowrap">{{ c.end_date or '-' }}</td>
                 <td class="nowrap">{{ c.next_payment_date }}</td>
                 <td>
                     <form method="POST" action="{{ url_for('delete_landlord', cid=c.contract_id) }}"
