@@ -58,6 +58,8 @@
             <tr>
                 <td>{{ c.shop_name }}</td>
                 <td>{{ c.tenant_name }}</td>
+                <td>{{ c.payment_method or '年付' }}</td>
+                <td>{{ '{:,.0f}'.format(c.installment_amount) if c.installment_amount else '-' }}</td>
                 <td>{{ c.tenant_phone }}</td>
                 <td>{{ '{:,.0f}'.format(c.annual_amount) if c.annual_amount else '-' }}</td>
                 <td class="nowrap">{{ c.signing_date or '-' }}</td>
