@@ -535,5 +535,19 @@ def main():
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
 
 
+
+def init_app():
+    """gunicorn 导入时调用的初始化"""
+    try:
+        init_db()
+        seed_demo_data()
+        load_sckey()
+    except Exception as e:
+        print(f"初始化警告: {e}")
+
+
+# 当 gunicorn 导入时（生产环境）初始化数据库
+init_app()
+
 if __name__ == "__main__":
     main()
