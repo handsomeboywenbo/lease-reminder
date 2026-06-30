@@ -516,10 +516,12 @@ def settings():
 def seed_demo_data():
     conn = get_conn()
     try:
-        conn.execute('DELETE FROM TenantContracts')
-        conn.execute('DELETE FROM LandlordContracts')
-        conn.execute('DELETE FROM Shops')
-        conn.execute("DELETE FROM sqlite_sequence")
+        conn.execute("DROP TABLE IF EXISTS TenantContracts")
+        conn.execute("DROP TABLE IF EXISTS LandlordContracts")
+        conn.execute("DROP TABLE IF EXISTS Shops")
+        conn.execute("CREATE TABLE Shops (shop_id INTEGER PRIMARY KEY AUTOINCREMENT, shop_name TEXT NOT NULL, address TEXT DEFAULT '')")
+        conn.execute("CREATE TABLE LandlordContracts (contract_id INTEGER PRIMARY KEY AUTOINCREMENT, shop_id INTEGER NOT NULL, landlord_name TEXT NOT NULL, landlord_phone TEXT DEFAULT '', signing_date TEXT DEFAULT '', annual_amount REAL DEFAULT 0, payment_method TEXT DEFAULT '年付', installment_amount REAL DEFAULT 0, end_date TEXT DEFAULT '', next_payment_date TEXT NOT NULL)")
+        conn.execute("CREATE TABLE TenantContracts (contract_id INTEGER PRIMARY KEY AUTOINCREMENT, shop_id INTEGER NOT NULL, tenant_name TEXT NOT NULL, tenant_phone TEXT NOT NULL, signing_date TEXT DEFAULT '', annual_amount REAL DEFAULT 0, payment_method TEXT DEFAULT '年付', installment_amount REAL DEFAULT 0, end_date TEXT DEFAULT '', next_payment_date TEXT NOT NULL)")
 
         # ======= 门面1：西街实验室 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('西街实验室', '西街实验室'))
