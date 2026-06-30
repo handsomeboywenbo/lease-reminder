@@ -65,6 +65,8 @@ def init_db():
             landlord_phone     TEXT DEFAULT '',
             signing_date       TEXT DEFAULT '',
             annual_amount      REAL DEFAULT 0,
+            payment_method     TEXT DEFAULT '年付',
+            installment_amount REAL DEFAULT 0,
             end_date           TEXT DEFAULT '',
             next_payment_date  TEXT NOT NULL
         );
@@ -77,6 +79,8 @@ def init_db():
             tenant_phone       TEXT NOT NULL,
             signing_date       TEXT DEFAULT '',
             annual_amount      REAL DEFAULT 0,
+            payment_method     TEXT DEFAULT '年付',
+            installment_amount REAL DEFAULT 0,
             end_date           TEXT DEFAULT '',
             next_payment_date  TEXT NOT NULL
         );
@@ -185,7 +189,7 @@ def index():
     tn30 = sql_now_plus(30)
 
     upcoming_tenants = conn.execute("""
-        SELECT s.shop_name, s.address, t.tenant_name, t.tenant_phone, t.annual_amount, t.next_payment_date
+        SELECT s.shop_name, s.address, t.tenant_name, t.tenant_phone, t.annual_amount, t.payment_method, t.installment_amount, t.next_payment_date
         FROM TenantContracts t
         JOIN Shops s ON s.shop_id = t.shop_id
         WHERE t.next_payment_date >= ?
@@ -194,7 +198,7 @@ def index():
     """, (tn, tn30)).fetchall()
 
     upcoming_landlords = conn.execute("""
-        SELECT s.shop_name, s.address, l.landlord_name, l.landlord_phone, l.annual_amount, l.next_payment_date
+        SELECT s.shop_name, s.address, l.landlord_name, l.landlord_phone, l.annual_amount, l.payment_method, l.installment_amount, l.next_payment_date
         FROM LandlordContracts l
         JOIN Shops s ON s.shop_id = l.shop_id
         WHERE l.next_payment_date >= ?
@@ -278,9 +282,11 @@ def landlords():
             try:
                 datetime.strptime(date_str, DATE_FMT)
                 amt = float(amount) if amount else 0
+                pay_method = request.form.get('payment_method', '年付').strip()
+                inst_amt = float(request.form.get('installment_amount', 0)) if request.form.get('installment_amount', '').strip() else amt
                 conn.execute(
-                    "INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (shop_id, name, phone, signing, amt, end, date_str),
+                    "INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (shop_id, name, phone, signing, amt, pay_method, inst_amt, end, date_str),
                 )
                 conn.commit()
                 flash(f"房东合同「{name}」添加成功", "success")
@@ -331,9 +337,11 @@ def edit_landlord(cid):
         try:
             datetime.strptime(date_str, DATE_FMT)
             amt = float(amount) if amount else 0
+            pay_method = request.form.get('payment_method', '年付').strip()
+            inst_amt = float(request.form.get('installment_amount', 0)) if request.form.get('installment_amount', '').strip() else amt
             conn.execute(
-                "UPDATE LandlordContracts SET shop_id=?, landlord_name=?, landlord_phone=?, signing_date=?, annual_amount=?, end_date=?, next_payment_date=? WHERE contract_id=?",
-                (shop_id, name, phone, signing, amt, end, date_str, cid),
+                "UPDATE LandlordContracts SET shop_id=?, landlord_name=?, landlord_phone=?, signing_date=?, annual_amount=?, payment_method=?, installment_amount=?, end_date=?, next_payment_date=? WHERE contract_id=?",
+                (shop_id, name, phone, signing, amt, pay_method, inst_amt, end, date_str, cid),
             )
             conn.commit()
             flash(f"房东合同已更新", "success")
@@ -364,9 +372,11 @@ def tenants():
             try:
                 datetime.strptime(date_str, DATE_FMT)
                 amt = float(amount) if amount else 0
+                pay_method = request.form.get('payment_method', '年付').strip()
+                inst_amt = float(request.form.get('installment_amount', 0)) if request.form.get('installment_amount', '').strip() else amt
                 conn.execute(
-                    "INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (shop_id, name, phone, signing, amt, end, date_str),
+                    "INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (shop_id, name, phone, signing, amt, pay_method, inst_amt, end, date_str),
                 )
                 conn.commit()
                 flash(f"租户合同「{name}」添加成功", "success")
@@ -417,9 +427,11 @@ def edit_tenant(cid):
         try:
             datetime.strptime(date_str, DATE_FMT)
             amt = float(amount) if amount else 0
+            pay_method = request.form.get('payment_method', '年付').strip()
+            inst_amt = float(request.form.get('installment_amount', 0)) if request.form.get('installment_amount', '').strip() else amt
             conn.execute(
-                "UPDATE TenantContracts SET shop_id=?, tenant_name=?, tenant_phone=?, signing_date=?, annual_amount=?, end_date=?, next_payment_date=? WHERE contract_id=?",
-                (shop_id, name, phone, signing, amt, end, date_str, cid),
+                "UPDATE TenantContracts SET shop_id=?, tenant_name=?, tenant_phone=?, signing_date=?, annual_amount=?, payment_method=?, installment_amount=?, end_date=?, next_payment_date=? WHERE contract_id=?",
+                (shop_id, name, phone, signing, amt, pay_method, inst_amt, end, date_str, cid),
             )
             conn.commit()
             flash(f"租户合同已更新", "success")
@@ -483,48 +495,44 @@ def seed_demo_data():
 
         # ======= 门面1：西街实验室 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('西街实验室', '西街实验室'))
-        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (1, '中电建建筑集团有限公司', '', '2026-04-13', 159135, '2027-04-12', '2026-07-13'))
-        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (1, '李四辈、朱洪帮', '', '2026-04-13', 220000, '2027-04-12', '2027-04-13'))
+        conn.execute("INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (1, '中电建建筑集团有限公司', '', '2026-04-13', 159135, '季付', 39783.75, '2027-04-12', '2026-07-13'))
+        conn.execute("INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (1, '李四辈、朱洪帮', '', '2026-04-13', 220000, '年付', 220000, '2027-04-12', '2027-04-13'))
 
         # ======= 门面2：天泰定福苑家政 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('天泰定福苑家政', '天泰定福苑家政'))
-        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (2, '物业公司', '', '2024-04-01', 5000, '2027-03-31', '2027-04-01'))
+        conn.execute("INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (2, '物业公司', '', '2024-04-01', 5000, '年付', 5000, '2027-03-31', '2027-04-01'))
 
         # ======= 门面3：西街社区医院6号楼7号楼 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('西街社区医院6号楼7号楼', '西街社区医院6号楼7号楼'))
-        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (3, '中电建建筑集团有限公司', '', '2026-04-21', 120000, '2027-04-20', '2026-07-21'))
-        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (3, '李雷', '', '2026-03-21', 162500, '2027-04-20', '2027-03-21'))
+        conn.execute("INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (3, '中电建建筑集团有限公司', '', '2026-04-21', 120000, '季付', 30000, '2027-04-20', '2026-07-21'))
+        conn.execute("INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (3, '李雷', '', '2026-03-21', 162500, '年付', 162500, '2027-04-20', '2027-03-21'))
 
         # ======= 门面4：大峪沟民宿 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('大峪沟民宿', '大峪沟民宿'))
-        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (4, '房东待填', '', '2025-09-15', 80000, '2030-09-14', '2026-09-15'))
-        # 无租户
+        conn.execute("INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (4, '房东待填', '', '2025-09-15', 80000, '季付', 20000, '2030-09-14', '2026-09-15'))
 
         # ======= 门面5：绿岛苑公寓 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('绿岛苑公寓', '绿岛苑公寓'))
-        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (5, '房东待填', '', '2023-07-01', 600000, '2030-05-16', '2026-07-01'))
-        # 租户：北京美联众合，下一期2026-09-01起按新价123.6万/年
-        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (5, '北京美联众合', '', '2023-09-01', 1236000, '2028-08-31', '2026-09-01'))
+        conn.execute("INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (5, '房东待填', '', '2023-07-01', 600000, '季付', 150000, '2030-05-16', '2026-07-01'))
+        conn.execute("INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (5, '北京美联众合', '', '2023-09-01', 1236000, '季付', 309000, '2028-08-31', '2026-09-01'))
 
         # ======= 门面6：天泰定福苑7号楼7单元102 =======
         conn.execute('INSERT INTO Shops (shop_name, address) VALUES (?, ?)', ('天泰定福苑7号楼7单元102', '天泰定福苑7号楼7单元102'))
-        # 房东：年付52478.97，第三年(2027-2028)递增5% = 55102.92
-        conn.execute('INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (6, '物业公司', '', '2025-07-11', 52478.97, '2028-07-10', '2026-07-11'))
-        # 租户：刘春霞，半年付，第一年月5000，第二三年月5200
-        conn.execute('INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (6, '刘春霞', '', '2024-12-01', 62400, '2027-11-30', '2026-12-01'))
+        conn.execute("INSERT INTO LandlordContracts (shop_id, landlord_name, landlord_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (6, '物业公司', '', '2025-07-11', 52478.97, '年付', 52478.97, '2028-07-10', '2026-07-11'))
+        conn.execute("INSERT INTO TenantContracts (shop_id, tenant_name, tenant_phone, signing_date, annual_amount, payment_method, installment_amount, end_date, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (6, '刘春霞', '', '2024-12-01', 62400, '半年付', 31200, '2027-11-30', '2026-12-01'))
 
         conn.commit()
-        print('真实数据已插入（6个门面）')
+        print('真实数据已插入（6个门面，含付款方式）')
     finally:
         conn.close()
 
